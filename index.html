@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Conversor RH</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+        body { font-family: 'Inter', sans-serif; }
+    </style>
+</head>
+<body class="bg-slate-100 text-slate-800 min-h-screen p-4 md:p-8">
+
+    <div class="max-w-5xl mx-auto bg-white rounded-2xl shadow-xl border border-slate-200 overflow-hidden">
+        
+        <!-- Topo / Cabeçalho -->
+        <div class="bg-slate-900 text-white p-6 border-b border-slate-800 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+            <div class="flex items-center gap-3">
+                <div class="p-3 bg-emerald-500 text-slate-900 rounded-xl font-bold">
+                    <i class="fa-solid fa-file-csv text-2xl"></i>
+                </div>
+                <div>
+                    <h1 class="text-xl font-bold">Conversor RH</h1>
+                    <p class="text-xs text-slate-400">Importação de dados para o sistema RH</p>
+                </div>
+            </div>
+
+            <!-- Botão Exemplo -->
+            <button id="btnExample" class="bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-semibold px-4 py-2.5 rounded-lg transition flex items-center gap-2 shadow-sm">
+                <i class="fa-solid fa-vial"></i> Carregar Dados de Exemplo
+            </button>
+        </div>
+
+        <div class="p-6 grid grid-cols-1 lg:grid-cols-2 gap-6">
+
+            <!-- LADO ESQUERDO: ENTRADA -->
+            <div class="flex flex-col space-y-4">
+                <div class="flex justify-between items-center">
+                    <label class="font-semibold text-sm text-slate-700 flex items-center gap-2">
+                        <i class="fa-solid fa-file-import text-emerald-600"></i> Entrada de Dados (TXT)
+                    </label>
+                    <span id="lineCount" class="text-xs text-slate-400">0 linha(s)</span>
+                </div>
+
+                <!-- Campo de Seleção de Arquivo -->
+                <div class="border-2 border-dashed border-slate-300 rounded-xl p-4 text-center bg-slate-50 hover:border-emerald-500 transition cursor-pointer" onclick="document.getElementById('fileInput').click()">
+                    <input type="file" id="fileInput" accept=".txt,.csv" class="hidden">
+                    <i class="fa-solid fa-cloud-arrow-up text-2xl text-slate-400 mb-1"></i>
+                    <p class="text-xs text-slate-600 font-medium">Clique para escolher o arquivo <span class="font-mono text-emerald-600">.TXT</span></p>
+                    <p id="fileName" class="text-[10px] text-slate-400 mt-1 italic"></p>
+                </div>
+
+                <!-- Área de Texto para Colar -->
+                <textarea id="inputText" rows="10" placeholder="Cole os dados aqui no formato original (com 'E.' ou ';')...
+Exemplo:
+0E.005038E.0464E.57.75E.21E.E.
+0E.007073E.0464E.57.75E.21E.E." 
+                class="w-full p-3 font-mono text-xs border border-slate-200 rounded-xl bg-slate-50 focus:outline-none focus:ring-2 focus:ring-emerald-500 resize-none flex-1 min-h-[180px]"></textarea>
+
+                <div class="flex gap-2">
+                    <button id="btnConvert" class="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold py-3 rounded-xl transition text-sm flex items-center justify-center gap-2 shadow-sm">
+                        <i class="fa-solid fa-bolt"></i> Converter Agora
+                    </button>
+                    <button id="btnClear" class="bg-slate-200 hover:bg-slate-300 text-slate-600 px-4 py-3 rounded-xl transition text-xs font-medium">
+                        Limpar
+                    </button>
+                </div>
+            </div>
+
+            <!-- LADO DIREITO: SAÍDA / PRÉ-VISUALIZAÇÃO -->
+            <div class="flex flex-col space-y-4">
+                <div class="flex justify-between items-center">
+                    <label class="font-semibold text-sm text-slate-700 flex items-center gap-2">
+                        <i class="fa-solid fa-table text-emerald-600"></i> Resultado CSV (9 Colunas)
+                    </label>
+                    <span class="text-[10px] bg-emerald-100 text-emerald-800 font-bold px-2 py-0.5 rounded">Formato de Importação</span>
+                </div>
+
+                <!-- Pré-visualização do CSV -->
+                <textarea id="outputText" readonly rows="13" placeholder="O resultado no formato final aparecerá aqui:
+005038;6082025;0464;000:00;0.00;57.75;57.75;N;N" 
+                class="w-full p-3 font-mono text-xs border border-slate-200 rounded-xl bg-slate-900 text-emerald-400 focus:outline-none resize-none flex-1 min-h-[250px]"></textarea>
+
+                <!-- Botões de Ação -->
+                <div class="grid grid-cols-2 gap-3">
+                    <button id="btnCopy" disabled class="bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-300 font-medium py-2.5 rounded-xl transition text-xs flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed">
+                        <i class="fa-regular fa-copy"></i> Copiar CSV
+                    </button>
+                    <button id="btnDownload" disabled class="bg-slate-900 hover:bg-slate-800 text-white font-medium py-2.5 rounded-xl transition text-xs flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed shadow-sm">
+                        <i class="fa-solid fa-download"></i> Baixar CSV
+                    </button>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- Rodapé Informativo das Colunas -->
+        <div class="bg-slate-50 border-t border-slate-200 p-4 text-[11px] text-slate-500 font-mono flex flex-wrap justify-between gap-2">
+            <span>[1] Matrícula</span>
+            <span>[2] 6082025</span>
+            <span>[3] Filial</span>
+            <span>[4] 000:00</span>
+            <span>[5] 0.00</span>
+            <span>[6] Valor</span>
+            <span>[7] Valor</span>
+            <span>[8] N</span>
+            <span>[9] N</span>
+        </div>
+
+    </div>
+
+    <script>
+        // Exemplo para testes rápidos
+        const SAMPLE_TEXT = `0E.005038E.0464E.55E.21E.E.
+0E.007073E.0464E.52.25E.21E.E.
+0E.008068E.0464E.35.75E.18E.E.
+0E.008085E.0464E.35.75E.20E.E.
+0E.008104E.0464E.2.75E.1E.E.
+0E.008105E.0464E.8.25E.2E.E.`;
+
+        const fileInput = document.getElementById('fileInput');
+        const fileName = document.getElementById('fileName');
+        const inputText = document.getElementById('inputText');
+        const outputText = document.getElementById('outputText');
+        const lineCount = document.getElementById('lineCount');
+        
+        const btnConvert = document.getElementById('btnConvert');
+        const btnExample = document.getElementById('btnExample');
+        const btnClear = document.getElementById('btnClear');
+        const btnCopy = document.getElementById('btnCopy');
+        const btnDownload = document.getElementById('btnDownload');
+
+        // Atualizar contador de linhas
+        inputText.addEventListener('input', () => {
+            const lines = inputText.value.trim().split('\n').filter(l => l.trim() !== '');
+            lineCount.textContent = `${lines.length} linha(s)`;
+        });
+
+        // Carregar Exemplo
+        btnExample.addEventListener('click', () => {
+            inputText.value = SAMPLE_TEXT;
+            fileName.textContent = 'exemplo_MV1.txt carregado';
+            inputText.dispatchEvent(new Event('input'));
+            convertMV1ToCSV();
+        });
+
+        // Limpar Campos
+        btnClear.addEventListener('click', () => {
+            inputText.value = '';
+            outputText.value = '';
+            fileInput.value = '';
+            fileName.textContent = '';
+            btnCopy.disabled = true;
+            btnDownload.disabled = true;
+            inputText.dispatchEvent(new Event('input'));
+        });
+
+        // Selecionar arquivo TXT
+        fileInput.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            fileName.textContent = file.name;
+            const reader = new FileReader();
+            reader.onload = (evt) => {
+                inputText.value = evt.target.result;
+                inputText.dispatchEvent(new Event('input'));
+                convertMV1ToCSV();
+            };
+            reader.readAsText(file);
+        });
+
+        // Função de conversão para o padrão exato de 9 colunas
+        function convertMV1ToCSV() {
+            const raw = inputText.value.trim();
+            if (!raw) return;
+
+            const lines = raw.split('\n');
+            const resultRows = [];
+
+            lines.forEach(line => {
+                const trimmed = line.trim();
+                if (!trimmed) return;
+
+                let parts = [];
+
+                // Se contiver o delimitador 'E.'
+                if (trimmed.includes('E.')) {
+                    parts = trimmed.split('E.').map(p => p.trim());
+                    // Remove posições vazias da ponta
+                    while (parts.length > 0 && parts[parts.length - 1] === '') {
+                        parts.pop();
+                    }
+                } else if (trimmed.includes(';')) {
+                    // Se estiver separado por ponto e vírgula
+                    parts = trimmed.split(';').map(p => p.trim());
+                }
+
+                // Para extrair os campos corretamente da linha
+                if (parts.length >= 4) {
+                    let matricula = parts[1] || '';
+                    let filial = parts[2] || '';
+                    let valorNum = parseFloat(parts[3]) || 0;
+
+                    // Formata o valor numérico com duas casas decimais
+                    let valorFormatado = valorNum.toFixed(2);
+
+                    // Garante matricula com zeros à esquerda (6 dígitos)
+                    if (matricula && !isNaN(matricula)) {
+                        matricula = matricula.padStart(6, '0');
+                    }
+
+                    // Monta as 9 colunas requeridas pelo sistema
+                    // Colunas: [1]Matricula; [2]Periodo; [3]Filial; [4]Horas; [5]Adicional; [6]Valor; [7]Valor; [8]N; [9]N
+                    const formattedRow = `${matricula};6082025;${filial};000:00;0.00;${valorFormatado};${valorFormatado};N;N`;
+                    resultRows.push(formattedRow);
+                }
+            });
+
+            if (resultRows.length > 0) {
+                outputText.value = resultRows.join('\n');
+                btnCopy.disabled = false;
+                btnDownload.disabled = false;
+            } else {
+                outputText.value = "Não foi possível converter os dados. Verifique a estrutura do texto.";
+                btnCopy.disabled = true;
+                btnDownload.disabled = true;
+            }
+        }
+
+        btnConvert.addEventListener('click', convertMV1ToCSV);
+
+        // Copiar Resultado
+        btnCopy.addEventListener('click', () => {
+            if (!outputText.value) return;
+
+            outputText.select();
+            document.execCommand('copy');
+
+            const prevText = btnCopy.innerHTML;
+            btnCopy.innerHTML = `<i class="fa-solid fa-check text-emerald-600"></i> Copiado!`;
+            setTimeout(() => { btnCopy.innerHTML = prevText; }, 2000);
+        });
+
+        // Baixar Arquivo CSV
+        btnDownload.addEventListener('click', () => {
+            if (!outputText.value) return;
+
+            const blob = new Blob([outputText.value], { type: 'text/csv;charset=utf-8;' });
+            const link = document.createElement('a');
+            const url = URL.createObjectURL(blob);
+            
+            link.setAttribute('href', url);
+            link.setAttribute('download', 'MV2_convertido.csv');
+            link.style.visibility = 'hidden';
+            
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            URL.revokeObjectURL(url);
+        });
+    </script>
+</body>
+</html>
